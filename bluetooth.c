@@ -53,6 +53,7 @@ Address:
 #include "bluetooth.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
+#include <avr/io.h>
 
 #ifdef LOOCI_COMPONENT_DEBUG
 #include "debug.h"
@@ -76,8 +77,26 @@ COMPONENT_NO_RECEPTACLES();
 LOOCI_PROPERTIES();
 LOOCI_COMPONENT("bluetooth",struct state);
 
+// Component macros
+#define F_CPU 16000000
+#define BaudRate 38400
+#define MYUBRR (F_CPU / 16 / BaudRate ) - 1 
+
 static uint8_t init(struct state* compState, void* data){
-	PRINT_LN("YES HELLO THIS IS DOG");
+	PRINT_LN("Initialising bluetooth component..");
+	// Configure UART1 (digital pins 0 and 1)
+	UBRR1H = (unsigned char) (MYUBRR >> 8);
+	UBRR1L = (unsigned char) MYUBRR;
+	// Set 8 bit mode, asynchronous
+	//UCSR1C = (1 << URSEL) | (3 << UCSZ0);
+	UCSR1C = 3 << UCSZ01;
+	// Enable RX and TX
+	UCSR1B = (1 << RXEN1) | (1 << TXEN1);
+	
+	// Set in master mode
+	serialWriteString("\r\n+STWMOD=1\r\n");
+	serialWriteString("\r\n+STNA=Whiii!\r\n");
+	
 	return 1;
 }
 
@@ -87,6 +106,8 @@ static uint8_t destroy(struct state* compState, void* data){
 }
 
 static uint8_t activate(struct state* compState, void* data){
+		
+
 	return 1;
 
 }
@@ -117,6 +138,54 @@ static uint8_t defaultFunc(struct state* state,struct contiki_call* data){
 
 static uint8_t propertySet(struct state* compState,struct contiki_call* data){
 	return 1;
+}
+
+// Serial helper functions
+bool receiveCompleted(void) {
+	return (UCSR1A & _BV(RXC1)) != 0;
+}
+
+bool sendCompleted(void) {
+	return (UCSR1A & _BV(UDRE1)) != 0;
+}
+
+unsigned char serialReadByte(void) {
+	while (!receiveCompleted());
+
+	return UDR1;
+}
+
+char* serialReadString(void) {
+	char ret[128];	// Don't allocate too much memory for buf
+	char *r = &ret;
+	char c;
+	
+	while ((c = serialReadByte()) != 0 &&
+		r < ret + 128) {
+		*r = c;
+		r++;
+	}
+	
+	*r = 0;	// Zero terminate
+	
+	return &ret;
+}
+
+void serialWriteByte(unsigned char DataOut) {
+	while (!sendCompleted());
+
+	UDR1 = DataOut;
+}
+
+void serialWriteString(char* s) {
+	PRINTF("Writing %s to UART", s);
+	while (*s != 0) {
+		serialWriteByte(*s);
+		s++;
+	}
+	
+	// Write null byte
+	serialWriteByte(0);
 }
 
 
