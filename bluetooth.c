@@ -78,25 +78,22 @@ COMPONENT_NO_RECEPTACLES();
 LOOCI_PROPERTIES();
 LOOCI_COMPONENT("bluetooth",struct state);
 
-// Component macros
 #define F_CPU 16000000
-#define BaudRate 38400
-#define MYUBRR (F_CPU / 16 / BaudRate ) - 1 
+#define BAUDRATE 38400
+#define MYUBRR (F_CPU / 16 / BAUDRATE ) - 1
 
 static uint8_t init(struct state* compState, void* data){
 	PRINT_LN("Initialising bluetooth component..");
-	// Configure UART1 (digital pins 0 and 1)
-	UBRR1H = (unsigned char) (MYUBRR >> 8);
-	UBRR1L = (unsigned char) MYUBRR;
-	// Set 8 bit mode, asynchronous
-	//UCSR1C = (1 << URSEL) | (3 << UCSZ0);
-	UCSR1C = 3 << UCSZ01;
-	// Enable RX and TX
-	UCSR1B = (1 << RXEN1) | (1 << TXEN1);
+	setupUART(MYUBRR);
 	
 	// Set in master mode
-	serialWriteString("\r\n+STWMOD=1\r\n");
-	serialWriteString("\r\n+STNA=Whiii!\r\n");
+	//serialWriteString("\r\n+STWMOD=1\r\n");
+	//serialWriteString("\r\n+STNA=Whiii!\r\n");
+	//serialWriteString("\r\n+INQ=1\r\n");
+	serialWriteString("\r\n+STWMOD=0\r\n");
+	serialWriteString("\r\n+STOAUT=1\r\n");
+
+	//PRINTF("Read %s\n", serialReadString());
 	
 	return 1;
 }
@@ -107,7 +104,6 @@ static uint8_t destroy(struct state* compState, void* data){
 }
 
 static uint8_t activate(struct state* compState, void* data){
-		
 
 	return 1;
 

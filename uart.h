@@ -6,16 +6,14 @@
 #define UART_H_
 
 // Serial helper functions
+void setupUART(int baud);
+
 bool receiveCompleted(void);
-
-bool sendCompleted(void);
-
 unsigned char serialReadByte(void);
-
 char* serialReadString(void);
 
+bool sendCompleted(void);
 void serialWriteByte(unsigned char DataOut);
-
 void serialWriteString(char* s);
 
 
