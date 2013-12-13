@@ -61,6 +61,7 @@ Address:
 #endif
 
 #include "uart.h"
+#include <util/delay.h>
 
 #define APPLICATION_EVENT_TYPE 282
 
@@ -92,24 +93,17 @@ static uint8_t init(struct state* compState, void* data){
 	
 	// Set in master mode
 	serialWriteString("\r\n+STWMOD=1\r\n");
-	for (i = 0; i < 500; i++);
-	serialReadString(buf);
-	PRINTF("%s", buf);
-	for (i = 0; i < 500; i++);
+	_delay_ms(3000);
+	//serialReadString(buf);
+	//PRINTF("%s", buf);
+	_delay_ms(3000);
 	serialWriteString("\r\n+STNA=Whiii!\r\n");
-	serialReadString(buf);
-	PRINTF("%s", buf);
-	for (i = 0; i < 500; i++);
+	//serialReadString(buf);
+	//PRINTF("%s", buf);
+	_delay_ms(3000);
 	serialWriteString("\r\n+INQ=1\r\n");
 	serialReadString(buf);
 	PRINTF("%s", buf);
-	//serialWriteString("\r\n+STWMOD=1\r\n");
-	//serialWriteString("\r\n+STNA=Whiii!\r\n");
-	//serialWriteString("\r\n+INQ=1\r\n");
-	//serialWriteString("\r\n+STOAUT=1\r\n");
-	//serialWriteString("\r\n+STNA=Whiii!\r\n");
-
-	//PRINTF("Read %s\n", serialReadString());
 	
 	return 1;
 }
