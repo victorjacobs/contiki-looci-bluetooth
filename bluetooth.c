@@ -65,6 +65,7 @@ Address:
 #define APPLICATION_EVENT_TYPE 282
 
 struct state{
+	struct etimer et;
 };
 
 #define LOOCI_COMPONENT_NAME bluetooth
@@ -78,20 +79,35 @@ COMPONENT_NO_RECEPTACLES();
 LOOCI_PROPERTIES();
 LOOCI_COMPONENT("bluetooth",struct state);
 
-#define F_CPU 16000000
-#define BAUDRATE 38400
-#define MYUBRR (F_CPU / 16 / BAUDRATE ) - 1
+#define MYUBBR 25
+
+static char* test = "Initialising bluetooth component..";
 
 static uint8_t init(struct state* compState, void* data){
-	PRINT_LN("Initialising bluetooth component..");
-	setupUART(MYUBRR);
+	char buf[128];
+	int i;
+	
+	PRINTF("%s",test);
+	setupUART(MYUBBR);
 	
 	// Set in master mode
+	serialWriteString("\r\n+STWMOD=1\r\n");
+	for (i = 0; i < 500; i++);
+	serialReadString(buf);
+	PRINTF("%s", buf);
+	for (i = 0; i < 500; i++);
+	serialWriteString("\r\n+STNA=Whiii!\r\n");
+	serialReadString(buf);
+	PRINTF("%s", buf);
+	for (i = 0; i < 500; i++);
+	serialWriteString("\r\n+INQ=1\r\n");
+	serialReadString(buf);
+	PRINTF("%s", buf);
 	//serialWriteString("\r\n+STWMOD=1\r\n");
 	//serialWriteString("\r\n+STNA=Whiii!\r\n");
 	//serialWriteString("\r\n+INQ=1\r\n");
-	serialWriteString("\r\n+STWMOD=0\r\n");
-	serialWriteString("\r\n+STOAUT=1\r\n");
+	//serialWriteString("\r\n+STOAUT=1\r\n");
+	//serialWriteString("\r\n+STNA=Whiii!\r\n");
 
 	//PRINTF("Read %s\n", serialReadString());
 	
@@ -104,9 +120,9 @@ static uint8_t destroy(struct state* compState, void* data){
 }
 
 static uint8_t activate(struct state* compState, void* data){
-
+	// Set timer to regularly print out data from shield
+	ETIMER_SET(&compState->et, 300);
 	return 1;
-
 }
 
 static uint8_t deactivate(struct state* compState, void* data){
@@ -119,6 +135,10 @@ static uint8_t deactivate(struct state* compState, void* data){
  * Data contains the timer that expired
  */
 static uint8_t time(struct state* compState, struct etimer* data){
+	//PRINT_LN("Time");
+	//serialReadString();
+	
+	ETIMER_RESET(&compState->et);
 	return 1;
 
 }

@@ -9,11 +9,9 @@
 void setupUART(int baud);
 
 bool receiveCompleted(void);
-unsigned char serialReadByte(void);
-char* serialReadString(void);
+void serialReadString(char* buf);
 
 bool sendCompleted(void);
-void serialWriteByte(unsigned char DataOut);
 void serialWriteString(char* s);
 
 
