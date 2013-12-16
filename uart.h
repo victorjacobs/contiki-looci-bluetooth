@@ -10,7 +10,7 @@ void setupUART(int baud);
 void shutdownUART(void);
 
 bool receiveCompleted(void);
-void serialReadString(char* buf);
+void serialReadString(char* buf, int timeOut);
 
 bool sendCompleted(void);
 void serialWriteString(char* s);

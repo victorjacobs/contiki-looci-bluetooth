@@ -63,22 +63,29 @@ Address:
 #include "uart.h"
 #include <util/delay.h>
 
-#define APPLICATION_EVENT_TYPE 282
+#define BT_DEVICE 4242
 
 struct state{
+	char ssid[128];
+	int beacon;
+	int rateScan;		// Seconds between scans
 	struct etimer et;
 };
 
 #define LOOCI_COMPONENT_NAME bluetooth
 
 COMPONENT_NO_INTERFACES();
-//COMPONENT_INTERFACES(APPLICATION_EVENT_TYPE);
+//COMPONENT_INTERFACES(BT_DEVICE);
 COMPONENT_NO_RECEPTACLES();
-//COMPONENT_RECEPTACLES(APPLICATION_EVENT_TYPE);
+//COMPONENT_RECEPTACLES(BT_DEVICE);
 #define LOOCI_NR_PROPERTIES 0
 //format = {propertyId, datatype,offset,size,name}
+/*LOOCI_PROPERTIES({1, 4, offsetof(struct state,  ssid), "ssid"},
+			{2, 2, offsetof(struct state,  beacon), "beacon"},
+			{3, 2, offsetof(struct state,  rateScan), "rate-scan"});*/
 LOOCI_PROPERTIES();
 LOOCI_COMPONENT("bluetooth",struct state);
+//LOOCI_COMPONENT_INIT("bluetooth", struct state, {.ssid = "test", .beacon = 1, .rate-scan = 5});
 
 #define MYUBBR 103
 
@@ -90,27 +97,20 @@ static uint8_t init(struct state* compState, void* data){
 	
 	PRINTF("%s",test);
 	setupUART(MYUBBR);
-	// Change to lower baud rate
-	//serialWriteString("\r\n+STBD=9600\r\n");
-	//serialWriteString("\r\n+STDB=9600\r\n");
-	/*_delay_ms(500);
-	shutdownUART();
-	_delay_ms(500);
-	setupUART(103);
-	_delay_ms(500);*/
 	
 	// Set in master mode
 	serialWriteString("\r\n+STWMOD=1\r\n");
 	_delay_ms(3000);
+	serialWriteString("\r\n+STNA=test\r\n");
 	_delay_ms(3000);
-	serialWriteString("\r\n+INQ=1\r\n");
+	/*serialWriteString("\r\n+INQ=1\r\n");
 	_delay_ms(1000);
 	serialReadString(buf);
 	_delay_ms(1000);
 	serialReadString(buf);
 	_delay_ms(1000);
 	serialReadString(buf);
-	//PRINTF("%s", buf);
+	//PRINTF("%s", buf);*/
 	
 	return 1;
 }
@@ -122,7 +122,7 @@ static uint8_t destroy(struct state* compState, void* data){
 
 static uint8_t activate(struct state* compState, void* data){
 	// Set timer to regularly print out data from shield
-	ETIMER_SET(&compState->et, 300);
+	ETIMER_SET(&compState->et, 2000);
 	return 1;
 }
 
@@ -136,8 +136,19 @@ static uint8_t deactivate(struct state* compState, void* data){
  * Data contains the timer that expired
  */
 static uint8_t time(struct state* compState, struct etimer* data){
-	//PRINT_LN("Time");
-	//serialReadString();
+	char buf[128];
+	
+	PRINT_LN("INQ");
+	
+	serialWriteString("\r\n+INQ=1\r\n");
+	_delay_ms(2000);
+
+	do {
+		serialReadString(buf, 10000);
+		PRINTF("%s\n", buf);
+	} while (buf[0] != 0);
+
+	serialWriteString("\r\n+INQ=0\r\n");
 	
 	ETIMER_RESET(&compState->et);
 	return 1;

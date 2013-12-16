@@ -6,6 +6,8 @@
 #include "bluetooth.h"
 #include <avr/io.h>
 
+#include <util/delay.h>
+
 // Serial helper functions
 // Setup
 void setupUART(int ubrr) {
@@ -28,10 +30,11 @@ bool receiveCompleted() {
 	return (UCSR1A & _BV(RXC1)) != 0;
 }
 
-void serialReadString(char* buf) {
+// Timeout is nb of milliseconds to wait
+void serialReadString(char* buf, int timeOut) {
 	int nlSeen = 0, crSeen = 0;
 	char a;
-	int i;
+	int i, j;
 	
 	do {
 		nlSeen = 0;
@@ -39,9 +42,22 @@ void serialReadString(char* buf) {
 		i = 0;
 		
 		while (!(nlSeen && crSeen)) {
-			while (!receiveCompleted());
-		
+			// Timeout read
+			j = 0;
+			while (!receiveCompleted()) {
+				if (j > timeOut) {
+					PRINT_LN("Read timeout");
+					buf[0] = 0;
+					return;
+				}
+
+				_delay_ms(1);
+				j++;
+			}
+			
+			// Read byte
 			a = UDR1;
+
 			if (a == 0x0d) {
 				crSeen = 1;
 			} else {
