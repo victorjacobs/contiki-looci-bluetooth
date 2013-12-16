@@ -10,10 +10,17 @@
 // Setup
 void setupUART(int ubrr) {
 	// Configure UART1 (digital pins 0 and 1)
-	UCSR1A &= ~_BV(U2X1);
+	UCSR1A &= ~_BV(U2X1);	// Disable double rate
 	UBRR1H = (unsigned char) (ubrr >> 8);
 	UBRR1L = (unsigned char) ubrr;
 	UCSR1B = _BV(RXEN1) | _BV(TXEN1);
+}
+
+void shutdownUART() {
+	UCSR1A = 0;
+	UCSR1B = 0;
+	UBRR1H = 0;
+	UBRR1L = 0;
 }
 
 // RX
@@ -26,29 +33,31 @@ void serialReadString(char* buf) {
 	char a;
 	int i;
 	
-	PRINTF("read: ");
-	
-	for (i = 0; nlSeen != 2 && crSeen != 2; i++) {
-		while (!receiveCompleted());
+	do {
+		nlSeen = 0;
+		crSeen = 0;
+		i = 0;
 		
-		a = UDR1;
+		while (!(nlSeen && crSeen)) {
+			while (!receiveCompleted());
 		
-		if (a == 0x0d) {
-			PRINT_LN("cr seen");
-			crSeen++;
-		} else {
-			if (a == 0x0a) {
-				PRINT_LN("nl seen");
-				nlSeen++;
-				
+			a = UDR1;
+			if (a == 0x0d) {
+				crSeen = 1;
 			} else {
-				buf[i] = a;
+				if (a == 0x0a) {
+					nlSeen = 1;
+					
+				} else {
+					buf[i] = a;
+					i++;
+				}
 			}
 		}
-	}
-	
-	// Null terminate
-	buf[i + 1] = 0;
+		
+		// Null terminate
+		buf[i] = 0;
+	} while (i == 0);
 }
 
 // TX

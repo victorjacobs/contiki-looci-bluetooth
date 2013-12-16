@@ -7,6 +7,7 @@
 
 // Serial helper functions
 void setupUART(int baud);
+void shutdownUART(void);
 
 bool receiveCompleted(void);
 void serialReadString(char* buf);

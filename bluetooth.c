@@ -80,7 +80,7 @@ COMPONENT_NO_RECEPTACLES();
 LOOCI_PROPERTIES();
 LOOCI_COMPONENT("bluetooth",struct state);
 
-#define MYUBBR 25
+#define MYUBBR 103
 
 static char* test = "Initialising bluetooth component..";
 
@@ -90,20 +90,27 @@ static uint8_t init(struct state* compState, void* data){
 	
 	PRINTF("%s",test);
 	setupUART(MYUBBR);
+	// Change to lower baud rate
+	//serialWriteString("\r\n+STBD=9600\r\n");
+	//serialWriteString("\r\n+STDB=9600\r\n");
+	/*_delay_ms(500);
+	shutdownUART();
+	_delay_ms(500);
+	setupUART(103);
+	_delay_ms(500);*/
 	
 	// Set in master mode
 	serialWriteString("\r\n+STWMOD=1\r\n");
 	_delay_ms(3000);
-	//serialReadString(buf);
-	//PRINTF("%s", buf);
-	_delay_ms(3000);
-	serialWriteString("\r\n+STNA=Whiii!\r\n");
-	//serialReadString(buf);
-	//PRINTF("%s", buf);
 	_delay_ms(3000);
 	serialWriteString("\r\n+INQ=1\r\n");
+	_delay_ms(1000);
 	serialReadString(buf);
-	PRINTF("%s", buf);
+	_delay_ms(1000);
+	serialReadString(buf);
+	_delay_ms(1000);
+	serialReadString(buf);
+	//PRINTF("%s", buf);
 	
 	return 1;
 }
