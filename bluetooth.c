@@ -66,26 +66,29 @@ Address:
 #define BT_DEVICE 4242
 
 struct state{
-	char ssid[128];
+	char ssid[64];
 	int beacon;
 	int rateScan;		// Seconds between scans
 	struct etimer et;
 };
 
+// Initial state
+static struct state initialState = {.ssid = "test", .beacon = 1, .rateScan = 2000};
+
 #define LOOCI_COMPONENT_NAME bluetooth
 
-COMPONENT_NO_INTERFACES();
-//COMPONENT_INTERFACES(BT_DEVICE);
-COMPONENT_NO_RECEPTACLES();
-//COMPONENT_RECEPTACLES(BT_DEVICE);
-#define LOOCI_NR_PROPERTIES 0
+//COMPONENT_NO_INTERFACES();
+COMPONENT_INTERFACES(BT_DEVICE);
+//COMPONENT_NO_RECEPTACLES();
+COMPONENT_RECEPTACLES(BT_DEVICE);
+#define LOOCI_NR_PROPERTIES 2
 //format = {propertyId, datatype,offset,size,name}
-/*LOOCI_PROPERTIES({1, 4, offsetof(struct state,  ssid), "ssid"},
-			{2, 2, offsetof(struct state,  beacon), "beacon"},
-			{3, 2, offsetof(struct state,  rateScan), "rate-scan"});*/
-LOOCI_PROPERTIES();
-LOOCI_COMPONENT("bluetooth",struct state);
-//LOOCI_COMPONENT_INIT("bluetooth", struct state, {.ssid = "test", .beacon = 1, .rate-scan = 5});
+LOOCI_PROPERTIES({1, DATATYPE_BYTE, offsetof(struct state,  ssid), 64, "ssid"},
+			{2, DATATYPE_BYTE, offsetof(struct state,  beacon), 1, "beacon"},
+			{3, DATATYPE_BYTE, offsetof(struct state,  rateScan), 1, "rateScan"});
+//LOOCI_PROPERTIES();
+//LOOCI_COMPONENT("bluetooth",struct state);
+LOOCI_COMPONENT_INIT("bluetooth", struct state, &initialState);
 
 #define MYUBBR 103
 
@@ -103,14 +106,6 @@ static uint8_t init(struct state* compState, void* data){
 	_delay_ms(3000);
 	serialWriteString("\r\n+STNA=test\r\n");
 	_delay_ms(3000);
-	/*serialWriteString("\r\n+INQ=1\r\n");
-	_delay_ms(1000);
-	serialReadString(buf);
-	_delay_ms(1000);
-	serialReadString(buf);
-	_delay_ms(1000);
-	serialReadString(buf);
-	//PRINTF("%s", buf);*/
 	
 	return 1;
 }
@@ -122,13 +117,13 @@ static uint8_t destroy(struct state* compState, void* data){
 
 static uint8_t activate(struct state* compState, void* data){
 	// Set timer to regularly print out data from shield
-	ETIMER_SET(&compState->et, 2000);
+	ETIMER_SET(&compState->et, 2000);	// TODO set from state
 	return 1;
 }
 
 static uint8_t deactivate(struct state* compState, void* data){
+	ETIMER_STOP(&compState->et);
 	return 1;
-
 }
 
 /*
@@ -138,19 +133,22 @@ static uint8_t deactivate(struct state* compState, void* data){
 static uint8_t time(struct state* compState, struct etimer* data){
 	char buf[128];
 	
-	PRINT_LN("INQ");
+	ETIMER_STOP(&compState->et);
 	
 	serialWriteString("\r\n+INQ=1\r\n");
-	_delay_ms(2000);
+	_delay_ms(400);
 
 	do {
 		serialReadString(buf, 10000);
-		PRINTF("%s\n", buf);
+		// Send event
+		PRINTF("Sending event: %s\n", buf);
+		if (buf[0] != 0)
+			PUBLISH_EVENT(BT_DEVICE, &buf, sizeof(test));
 	} while (buf[0] != 0);
 
 	serialWriteString("\r\n+INQ=0\r\n");
 	
-	ETIMER_RESET(&compState->et);
+	ETIMER_RESTART(&compState->et);
 	return 1;
 
 }
@@ -166,6 +164,7 @@ static uint8_t defaultFunc(struct state* state,struct contiki_call* data){
 }
 
 static uint8_t propertySet(struct state* compState,struct contiki_call* data){
+	// TODO
 	return 1;
 }
 
