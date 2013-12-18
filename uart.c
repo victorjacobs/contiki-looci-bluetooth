@@ -46,7 +46,6 @@ void serialReadString(char* buf, int timeOut) {
 			j = 0;
 			while (!receiveCompleted()) {
 				if (j > timeOut) {
-					PRINT_LN("Read timeout");
 					buf[0] = 0;
 					return;
 				}

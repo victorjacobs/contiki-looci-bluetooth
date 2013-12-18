@@ -83,7 +83,7 @@ COMPONENT_INTERFACES(BT_DEVICE);
 COMPONENT_RECEPTACLES(BT_DEVICE);
 #define LOOCI_NR_PROPERTIES 2
 //format = {propertyId, datatype,offset,size,name}
-LOOCI_PROPERTIES({1, DATATYPE_BYTE, offsetof(struct state,  ssid), 64, "ssid"},
+LOOCI_PROPERTIES({1, DATATYPE_BYTE_ARRAY, offsetof(struct state,  ssid), 64, "ssid"},
 			{2, DATATYPE_BYTE, offsetof(struct state,  beacon), 1, "beacon"},
 			{3, DATATYPE_BYTE, offsetof(struct state,  rateScan), 1, "rateScan"});
 //LOOCI_PROPERTIES();
@@ -141,9 +141,10 @@ static uint8_t time(struct state* compState, struct etimer* data){
 	do {
 		serialReadString(buf, 10000);
 		// Send event
-		PRINTF("Sending event: %s\n", buf);
-		if (buf[0] != 0)
-			PUBLISH_EVENT(BT_DEVICE, &buf, sizeof(test));
+		if (buf[0] != 0) {
+			PRINT_LN("Discovered device");
+			PUBLISH_EVENT(BT_DEVICE, &buf, strlen(buf));
+		}
 	} while (buf[0] != 0);
 
 	serialWriteString("\r\n+INQ=0\r\n");
